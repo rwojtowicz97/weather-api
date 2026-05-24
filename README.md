@@ -41,18 +41,8 @@ Open-Meteo udostępnia trzy zbiory danych historycznych o **tej samej strukturze
 | `forecast` | 90 dni | 15 |
 | `historical-forecast` | 180 dni | **34** |
 
-W ERA5 kod 45 nie pojawił się ani razu przez 180 dni dla żadnego miasta, więc `most_frequent_fog` wychodziłby zawsze `null`. `historical-forecast` liczy `weather_code` wykorzystuję te same dane co `forecast` - dlatego jest domyślnym i właściwym dla tego zadania źródłem.
+W ERA5 kod 45 nie pojawił się ani razu przez 180 dni dla żadnego miasta, więc `most_frequent_fog` wychodziłby zawsze `null`. `historical-forecast` wykorzystuje te same dane co `forecast` - dlatego jest domyślnym i właściwym dla tego zadania źródłem.
 
-
-Odpowiedź na request za 180 dni z `/v1/forecast`:
-```
-curl 'https://api.open-meteo.com/v1/forecast?latitude=41.4595&longitude=-81.6449&hourly=temperature_2m&past_days=180&forecast
-_days=1' | jq
-{
-  "error": true,
-  "reason": "Past days is invalid. Allowed range 0 to 93. Given 180."
-}
-```
 
 **Parametry zapytania:**
 
@@ -67,13 +57,12 @@ _days=1' | jq
 
 #### Tryb `forecast` (parametr `--source`)
 
-Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie 93 dni wstecz. Dodałem go jako alternatywne źródło (`--source forecast`, okno 90 dni) z dwóch powodów:
+Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie 93 dni wstecz. Dodałem go jako alternatywne źródło (`--source forecast`, okno 90 dni) z trzech powodów:
 
 - **Odporność na awarie** - gdy Historical API jest niedostępne (np. chwilowy outage hosta `archive-api.open-meteo.com`), program nadal działa na krótszym oknie bez zmian w kodzie analizy.
 - **Tani benchmark/testy** - krótsze okno = szybsze odpowiedzi, wygodne do wielokrotnych przebiegów narzędzia wydajnościowego.
 - **Korzysta z innych modeli** - w przypadku `weather_code` na innej podstawie zwraca informacje o pogodzie, np. archive potrafi zwrócić inny weather code niż forecast z tego samego dnia.
 
-Tryb `forecast` (90 dni) służy głównie do taniego benchmarku/testów i jako fallback przy awarii pozostałych hostów. Pole `metadata.source` w `results.json` zapisuje, które źródło wygenerowało dany wynik.
 
 https://status.open-meteo.com/
 
