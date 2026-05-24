@@ -1,19 +1,22 @@
 {
   "metadata": {
-    "source": "archive",
+    "source": "historical-forecast",
     "start_date": "2025-11-26",
     "end_date": "2026-05-24",
     "cities_analyzed": 172,
     "cities_failed": 0
   },
   "highest_avg_temperature": {
-    "city": "Legnica",
-    "avg_temperature_c": 4.94
+    "city": "Bielsko-Biała",
+    "avg_temperature_c": 5.85
   },
-  "most_frequent_fog": null,
+  "most_frequent_fog": {
+    "city": "Lubań",
+    "fog_days": 37
+  },
   "most_frequent_clear_sky": {
-    "city": "Poznań",
-    "clear_sky_days": 10
+    "city": "Lipno",
+    "clear_sky_days": 9
   },
   "failed_cities": []
 }

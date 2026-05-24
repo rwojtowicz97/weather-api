@@ -10,10 +10,12 @@ import aiohttp
 import sys
 from operator import attrgetter
 
+HISTORICAL_FORECAST_URL = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 SOURCES: dict[str, tuple[str, int]] = {
+    "historical-forecast": (HISTORICAL_FORECAST_URL, 180),
     "archive": (ARCHIVE_URL, 180),
     "forecast": (FORECAST_URL, 90),
 }
@@ -45,9 +47,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source",
         choices=tuple(SOURCES),
-        default="archive",
+        default="historical-forecast",
         type=str,
-        help="Source of data: archive(180 days) or forecast(90 days)",
+        help="Source of data: historical-forecast (default, 180 days, high-res model), archive (180 days, ERA5) or forecast (90 days)",
     )
 
     args = parser.parse_args()
@@ -172,10 +174,11 @@ async def fetch_city(
                     return None
             except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 if attempt == MAX_RETRIES - 1:
-                    print(f"[warn] {city.name}: {exc!r}", file=sys.stderr)
+                    print(f"[warn] {city.name}: {exc}", file=sys.stderr)
                     return None
                 await asyncio.sleep(2**attempt)
-        print(f"[warn] {city.name}: couldn't get data after {MAX_RETRIES} tries", file=sys.stderr)
+        if not quiet:
+            print(f"[warn] {city.name}: couldn't get data after {MAX_RETRIES} tries", file=sys.stderr)
         return None
 
 def build_results(

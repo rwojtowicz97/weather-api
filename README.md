@@ -1,6 +1,6 @@
 # weather-api
 
-Analiza pogody z ostatniego pół roku dla polskich miast na podstawie danych z Open-Meteo Historical Weather API.
+Analiza pogody z ostatniego pół roku dla polskich miast na podstawie danych Open-Meteo (domyślnie Historical Forecast API).
 
 ##
 
@@ -19,19 +19,30 @@ uv run python main.py --input pl172.json --output results.json --concurrency 10
 | `--input`       | Plik wejściowy JSON z listą miast                                     | tak      |
 | `--output`      | Ścieżka do pliku wynikowego JSON                                      | tak      |
 | `--concurrency` | Maksymalna liczba równoległych requestów do API                       | nie      |
-| `--source`      | Źródło danych: `archive` (domyślne, 180 dni) lub `forecast` (~90 dni) | nie      |
+| `--source`      | Źródło danych: `historical-forecast` (domyślne, 180 dni), `archive` (180 dni, ERA5) lub `forecast` (~90 dni) | nie |
 
 ## Założenia projektowe
 
 ### 1. Wybór API i endpointu
 
-Wykorzystywany jest **Historical Weather API** Open-Meteo:
+Open-Meteo udostępnia trzy zbiory danych historycznych o **tej samej strukturze odpowiedzi** (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`). Program obsługuje wszystkie przez `--source`:
 
-```
-https://archive-api.open-meteo.com/v1/archive
-```
+| `--source` | Endpoint | Okno | Model |
+|---|---|---|---|
+| `historical-forecast` (domyślny) | `historical-forecast-api.open-meteo.com/v1/forecast` | 180 dni | historyczna kopia danych `forecast` |
+| `archive` | `archive-api.open-meteo.com/v1/archive` | 180 dni | reanaliza ERA5 |
+| `forecast` | `api.open-meteo.com/v1/forecast` | ~90 dni | bieżące modele (max 93 dni wstecz) |
 
-Endpoint zwraca historyczne dane w przeciwieństwie do `/v1/forecast`, który obsługuje prognozę z ostatnich ~3 miesięcy.
+**Dlaczego domyślnie `historical-forecast`, a nie `archive` ERA5?** Bo tylko on daje jednocześnie pełne pół roku **i** mgłę (kod 45). ERA5 (`archive`) to reanaliza na większym obszarze, która w dziennym `weather_code` praktycznie nie raportuje mgły. Sprawdziłem to ręcznie na Lęborku (to samo miasto i okno):
+
+| źródło | okno | `fog_days` (kod 45) |
+|---|---|---|
+| `archive` (ERA5) | 180 dni | **0** |
+| `forecast` | 90 dni | 15 |
+| `historical-forecast` | 180 dni | **34** |
+
+W ERA5 kod 45 nie pojawił się ani razu przez 180 dni dla żadnego miasta, więc `most_frequent_fog` wychodziłby zawsze `null`. `historical-forecast` liczy `weather_code` wykorzystuję te same dane co `forecast` - dlatego jest domyślnym i właściwym dla tego zadania źródłem.
+
 
 Odpowiedź na request za 180 dni z `/v1/forecast`:
 ```
@@ -62,7 +73,7 @@ Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną str
 - **Tani benchmark/testy** - krótsze okno = szybsze odpowiedzi, wygodne do wielokrotnych przebiegów narzędzia wydajnościowego.
 - **Korzysta z innych modeli** - w przypadku `weather_code` na innej podstawie zwraca informacje o pogodzie, np. archive potrafi zwrócić inny weather code niż forecast z tego samego dnia.
 
-Domyślne i właściwe dla zadania źródło to `archive` (pełne 180 dni). Pole `metadata.source` w `results.json` zapisuje, które źródło wygenerowało dany wynik.
+Tryb `forecast` (90 dni) służy głównie do taniego benchmarku/testów i jako fallback przy awarii pozostałych hostów. Pole `metadata.source` w `results.json` zapisuje, które źródło wygenerowało dany wynik.
 
 https://status.open-meteo.com/
 
@@ -104,14 +115,16 @@ Dla każdego miasta liczymy:
 - `fog_days` - liczba dni z `weather_code == 45`.
 - `clear_sky_days` - liczba dni z `weather_code == 0`.
 
-**Brak zjawiska = `null`.** Jeśli żadne miasto nie odnotowało danego zjawiska (maksimum `fog_days` lub `clear_sky_days` wynosi 0), w wyniku zwracamy `null` zamiast wskazywać przypadkowe pierwsze miasto z zerowym licznikiem - taki "zwycięzca" byłby mylący. 
+**Brak zjawiska = `null`.** Jeśli żadne miasto nie odnotowało danego zjawiska (maksimum `fog_days` lub `clear_sky_days` wynosi 0), w wyniku zwracamy `null` zamiast wskazywać przypadkowe pierwsze miasto z zerowym licznikiem - taki "zwycięzca" byłby mylący.
+
+Ma to znaczenie przy `--source archive`: ERA5 nie raportuje kodu 45, więc `fog_days` jest tam zerowe dla wszystkich miast i `most_frequent_fog` wychodzi `null` (stąd domyślne `historical-forecast` - patrz sekcja 1).
 
 ### 7. Struktura `results.json`
 
 ```json
 {
   "metadata": {
-    "source": "archive",
+    "source": "historical-forecast",
     "start_date": "2025-11-25",
     "end_date": "2026-05-23",
     "cities_analyzed": 172,
@@ -169,6 +182,6 @@ Konfiguracja środowiska przez `uv` (`pyproject.toml`).
 ## Przykładowe wywołania
 
 ```
-uv run python main.py --input pl172.json --output results.json --concurrency 10
+uv run python main.py --input pl172.json --output results.json --concurrency 5
 uv run python benchmark.py --input pl172.json --concurrency-levels 1,2,10 --sample 10
 ```
