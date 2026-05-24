@@ -49,17 +49,18 @@ _days=1' | jq
 |--------------|-------------------------------------------|--------------------------------------------------------------------|
 | `latitude`   | z `pl172.json`                            | współrzędne miasta                                                 |
 | `longitude`  | z `pl172.json`                            | współrzędne miasta                                                 |
-| `start_date` | `end_date - 179 dni`                      | 180-dniowe okno                                                    |
+| `start_date` | `end_date - 179/89 dni`                   | 180/90-dniowe okno                                                 |
 | `end_date`   | `today`                                   |                                                                    |
-| `daily`      | `weather_code,temperature_2m_mean`        | dokładnie te metryki, których wymaga analiza                       |
+| `daily`      | `weather_code,temperature_2m_mean`        | metryki, których wymaga analiza                                    |
 | `timezone`   | `auto`                                    |                                                                    |
 
 #### Tryb `forecast` (parametr `--source`)
 
-Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie 93 dni wstecz. Dodaliśmy go jako alternatywne źródło (`--source forecast`, okno 90 dni) z dwóch powodów:
+Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie 93 dni wstecz. Dodałem go jako alternatywne źródło (`--source forecast`, okno 90 dni) z dwóch powodów:
 
-- **Odporność na awarie** — gdy Historical API jest niedostępne (np. chwilowy outage hosta `archive-api.open-meteo.com`), program nadal działa na krótszym oknie bez zmian w kodzie analizy.
-- **Tani benchmark/testy** — krótsze okno = szybsze odpowiedzi, wygodne do wielokrotnych przebiegów narzędzia wydajnościowego.
+- **Odporność na awarie** - gdy Historical API jest niedostępne (np. chwilowy outage hosta `archive-api.open-meteo.com`), program nadal działa na krótszym oknie bez zmian w kodzie analizy.
+- **Tani benchmark/testy** - krótsze okno = szybsze odpowiedzi, wygodne do wielokrotnych przebiegów narzędzia wydajnościowego.
+- **Korzysta z innych modeli** - w przypadku `weather_code` na innej podstawie zwraca informacje o pogodzie, np. archive potrafi zwrócić inny weather code niż forecast z tego samego dnia.
 
 Domyślne i właściwe dla zadania źródło to `archive` (pełne 180 dni). Pole `metadata.source` w `results.json` zapisuje, które źródło wygenerowało dany wynik.
 
@@ -84,7 +85,7 @@ Open-Meteo udostępnia oficjalną bibliotekę [`openmeteo-requests`](https://pyp
 
 - **Konflikt z `--concurrency`** - tracimy kontrole nad liczbą równoległych requestów, klient byłby lepszy do  operacji batchowych.
 - **Mniej zależności** - klient korzysta z `niquests` + `flatbuffers`, a do wygodnego czytania danych `numpy`/`pandas`.
-- **Przejrzystość** - Nie musimy parsować wyjścia z `numpy`/`pandas` do jsona.
+- **Przejrzystość** - nie musimy parsować wyjścia z `numpy`/`pandas` do jsona.
 - **Własna obsługa błędów** - możemy sami zarządzać błędami.
 
 Dla produkcyjnego pipeline'u wybór byłby odwrotny.
