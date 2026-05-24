@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "source": "forecast",
+    "start_date": "2026-02-24",
+    "end_date": "2026-05-24",
+    "cities_analyzed": 172,
+    "cities_failed": 0
+  },
+  "highest_avg_temperature": {
+    "city": "Katowice",
+    "avg_temperature_c": 11.36
+  },
+  "most_frequent_fog": {
+    "city": "Lębork",
+    "fog_days": 15
+  },
+  "most_frequent_clear_sky": {
+    "city": "Biłgoraj",
+    "clear_sky_days": 4
+  },
+  "failed_cities": []
+}
