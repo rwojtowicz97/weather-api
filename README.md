@@ -52,11 +52,11 @@ _days=1' | jq
 | `start_date` | `end_date - 179 dni`                      | 180-dniowe okno                                                    |
 | `end_date`   | `today`                                   |                                                                    |
 | `daily`      | `weather_code,temperature_2m_mean`        | dokładnie te metryki, których wymaga analiza                       |
-| `timezone`   | `auto`                                    | "doba" definiowana w lokalnej strefie miasta                       |
+| `timezone`   | `auto`                                    |                                                                    |
 
 #### Tryb `forecast` (parametr `--source`)
 
-Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie ~92 dni wstecz. Dodaliśmy go jako alternatywne źródło (`--source forecast`, okno 90 dni) z dwóch powodów:
+Forecast API (`https://api.open-meteo.com/v1/forecast`) zwraca **identyczną strukturę** odpowiedzi (`daily.time`, `daily.weather_code`, `daily.temperature_2m_mean`), ale obsługuje maksymalnie 93 dni wstecz. Dodaliśmy go jako alternatywne źródło (`--source forecast`, okno 90 dni) z dwóch powodów:
 
 - **Odporność na awarie** — gdy Historical API jest niedostępne (np. chwilowy outage hosta `archive-api.open-meteo.com`), program nadal działa na krótszym oknie bez zmian w kodzie analizy.
 - **Tani benchmark/testy** — krótsze okno = szybsze odpowiedzi, wygodne do wielokrotnych przebiegów narzędzia wydajnościowego.
