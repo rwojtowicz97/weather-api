@@ -38,10 +38,10 @@ class CityStats:
     clear_sky_days: int
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("Analyze weather from WeatherAPI for last 180 days")
+    parser = argparse.ArgumentParser(description="Analyze weather from Open-Meteo for last 180 days")
     parser.add_argument("--input",required=True, type=Path, help="Path to input file with cities that you want to analyze")
     parser.add_argument("--output", required=True, type=Path, help="Path for output file with results")
-    parser.add_argument("--concurrency", type=int, help="Amount of concurrent requests to WeatherAPI", default=1)
+    parser.add_argument("--concurrency", type=int, help="Amount of concurrent requests to Open-Meteo", default=1)
     parser.add_argument(
         "--source",
         choices=tuple(SOURCES),
@@ -55,10 +55,34 @@ def parse_args() -> argparse.Namespace:
     return args
 
 def load_cities(path: Path) -> list[City]:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        sys.exit(f"[error] cannot read input file {path}: {exc}")
+
+    try:
+        raw = json.loads(text)
+    except json.JSONDecodeError as exc:
+        sys.exit(f"[error] {path} is not valid JSON: {exc}")
+
+    if not isinstance(raw, list):
+        sys.exit(f"[error] {path}: expected a JSON array of cities, got {type(raw).__name__}")
+    if not raw:
+        sys.exit(f"[error] {path}: city list is empty")
+
     cities = []
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    for city in raw:
-        cities.append(City(name=str(city["city"]), lat=float(city["lat"]), lng=float(city["lng"])))
+    for i, city in enumerate(raw):
+        if not isinstance(city, dict):
+            sys.exit(f"[error] {path}: record #{i} is not an object")
+        try:
+            name = str(city["city"])
+            lat = float(city["lat"])
+            lng = float(city["lng"])
+        except KeyError as exc:
+            sys.exit(f"[error] {path}: record #{i} is missing required field {exc}")
+        except (TypeError, ValueError) as exc:
+            sys.exit(f"[error] {path}: record #{i} ({city.get('city', '?')}) has invalid lat/lng: {exc}")
+        cities.append(City(name=name, lat=lat, lng=lng))
     return cities
 
 def date_window(window_days: int) -> tuple[date, date]:
