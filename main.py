@@ -81,7 +81,7 @@ def load_cities(path: Path) -> list[City]:
         except KeyError as exc:
             sys.exit(f"[error] {path}: record #{i} is missing required field {exc}")
         except (TypeError, ValueError) as exc:
-            sys.exit(f"[error] {path}: record #{i} ({city.get('city', '?')}) has invalid lat/lng: {exc}")
+            sys.exit(f"[error] {path}: record #{i} ({city.get('city', 'empty name')}) has invalid lat/lng: {exc}")
         cities.append(City(name=name, lat=lat, lng=lng))
     return cities
 
