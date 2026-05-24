@@ -18,7 +18,7 @@ uv run python main.py --input pl172.json --output results.json --concurrency 10
 |-----------------|-----------------------------------------------------------------------|----------|
 | `--input`       | Plik wejściowy JSON z listą miast                                     | tak      |
 | `--output`      | Ścieżka do pliku wynikowego JSON                                      | tak      |
-| `--concurrency` | Maksymalna liczba równoległych requestów do API                       | tak      |
+| `--concurrency` | Maksymalna liczba równoległych requestów do API                       | nie      |
 | `--source`      | Źródło danych: `archive` (domyślne, 180 dni) lub `forecast` (~90 dni) | nie      |
 
 ## Założenia projektowe
