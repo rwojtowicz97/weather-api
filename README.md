@@ -161,6 +161,13 @@ concurrency | time (s) |  req/s | failed
 ## Zależności
 
 - `aiohttp` - async HTTP client
-- Python ≥ 3.11 (dla `asyncio.TaskGroup` i nowszego API)
 
 Konfiguracja środowiska przez `uv` (`pyproject.toml`).
+
+
+## Przykładowe wywołania
+
+```
+uv run python main.py --input pl172.json --output results.json --source forecast
+uv run python benchmark.py --input pl172.json --concurrency-levels 1,2,10 --sample 10 --source forecast
+```
